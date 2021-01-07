@@ -1,11 +1,5 @@
 package com.alibaba.otter.canal.server;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-
-import org.junit.Test;
-
 import com.alibaba.otter.canal.protocol.CanalEntry.Entry;
 import com.alibaba.otter.canal.protocol.CanalEntry.EntryType;
 import com.alibaba.otter.canal.protocol.CanalEntry.Header;
@@ -18,10 +12,15 @@ import com.alibaba.otter.canal.protocol.exception.CanalClientException;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.WireFormat;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 public class ProtocolTest {
 
-    @Test
+    @Test(expected = CanalClientException.class)
     public void testSimple() throws IOException {
         Header.Builder headerBuilder = Header.newBuilder();
         headerBuilder.setLogfileName("mysql-bin.000001");
@@ -64,8 +63,8 @@ public class ProtocolTest {
         messageSize += com.google.protobuf.CodedOutputStream.computeInt64Size(1, message.getId());
 
         int dataSize = 0;
-        for (int i = 0; i < rowEntries.size(); i++) {
-            dataSize += com.google.protobuf.CodedOutputStream.computeBytesSizeNoTag(rowEntries.get(i));
+        for (ByteString rowEntry : rowEntries) {
+            dataSize += CodedOutputStream.computeBytesSizeNoTag(rowEntry);
         }
         messageSize += dataSize;
         messageSize += 1 * rowEntries.size();
@@ -83,8 +82,8 @@ public class ProtocolTest {
         output.writeRawVarint32(messageSize);
         // message
         output.writeInt64(1, message.getId());
-        for (int i = 0; i < rowEntries.size(); i++) {
-            output.writeBytes(2, rowEntries.get(i));
+        for (ByteString rowEntry : rowEntries) {
+            output.writeBytes(2, rowEntry);
         }
         output.checkNoSpaceLeft();
 

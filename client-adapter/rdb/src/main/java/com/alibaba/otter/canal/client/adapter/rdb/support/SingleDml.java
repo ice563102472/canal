@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.util.LinkedCaseInsensitiveMap;
+
 import com.alibaba.otter.canal.client.adapter.support.Dml;
 
 public class SingleDml {
@@ -14,7 +16,6 @@ public class SingleDml {
     private String              type;
     private Map<String, Object> data;
     private Map<String, Object> old;
-    private boolean             isTruncate = false;
 
     public String getDestination() {
         return destination;
@@ -64,27 +65,27 @@ public class SingleDml {
         this.old = old;
     }
 
-    public boolean getIsTruncate() {
-        return isTruncate;
-    }
-
-    public void setIsTruncate(boolean isTruncate) {
-        this.isTruncate = isTruncate;
-    }
-
-    public static List<SingleDml> dml2SingleDmls(Dml dml) {
-        int size = dml.getData() == null ? 0 : dml.getData().size();
+    public static List<SingleDml> dml2SingleDmls(Dml dml, boolean caseInsensitive) {
         List<SingleDml> singleDmls = new ArrayList<>();
-        if (size > 0) {
+        if (dml.getData() != null) {
+            int size = dml.getData().size();
             for (int i = 0; i < size; i++) {
                 SingleDml singleDml = new SingleDml();
                 singleDml.setDestination(dml.getDestination());
                 singleDml.setDatabase(dml.getDatabase());
                 singleDml.setTable(dml.getTable());
                 singleDml.setType(dml.getType());
-                singleDml.setData(dml.getData().get(i));
+                Map<String, Object> data = dml.getData().get(i);
+                if (caseInsensitive) {
+                    data = toCaseInsensitiveMap(data);
+                }
+                singleDml.setData(data);
                 if (dml.getOld() != null) {
-                    singleDml.setOld(dml.getOld().get(i));
+                    Map<String, Object> oldData = dml.getOld().get(i);
+                    if (caseInsensitive) {
+                        oldData = toCaseInsensitiveMap(oldData);
+                    }
+                    singleDml.setOld(oldData);
                 }
                 singleDmls.add(singleDml);
             }
@@ -94,9 +95,18 @@ public class SingleDml {
             singleDml.setDatabase(dml.getDatabase());
             singleDml.setTable(dml.getTable());
             singleDml.setType(dml.getType());
-            singleDml.setIsTruncate(true);
             singleDmls.add(singleDml);
         }
         return singleDmls;
+    }
+
+    public static List<SingleDml> dml2SingleDmls(Dml dml) {
+        return dml2SingleDmls(dml, false);
+    }
+
+    private static <V> LinkedCaseInsensitiveMap<V> toCaseInsensitiveMap(Map<String, V> data) {
+        LinkedCaseInsensitiveMap map = new LinkedCaseInsensitiveMap();
+        map.putAll(data);
+        return map;
     }
 }

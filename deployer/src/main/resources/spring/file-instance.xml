@@ -15,22 +15,22 @@
 	<bean id="instance" class="com.alibaba.otter.canal.instance.spring.CanalInstanceWithSpring">
 		<property name="destination" value="${canal.instance.destination}" />
 		<property name="eventParser">
-			<ref local="eventParser" />
+			<ref bean="eventParser" />
 		</property>
 		<property name="eventSink">
-			<ref local="eventSink" />
+			<ref bean="eventSink" />
 		</property>
 		<property name="eventStore">
-			<ref local="eventStore" />
+			<ref bean="eventStore" />
 		</property>
 		<property name="metaManager">
-			<ref local="metaManager" />
+			<ref bean="metaManager" />
 		</property>
 		<property name="alarmHandler">
-			<ref local="alarmHandler" />
+			<ref bean="alarmHandler" />
 		</property>
         <property name="mqConfig">
-            <ref local="mqConfig" />
+            <ref bean="mqConfig" />
         </property>
 	</bean>
 
@@ -84,6 +84,10 @@
 				<constructor-arg index="1" value="false" />
 			</bean>
 		</property>
+		
+		<property name="fieldFilter" value="${canal.instance.filter.field}" />
+		<property name="fieldBlackFilter" value="${canal.instance.filter.black.field}" />
+		
 		<!-- 最大事务解析大小，超过该大小后事务将被切分为多个事务投递 -->
 		<property name="transactionSize" value="${canal.instance.transaction.size:1024}" />
 
@@ -121,7 +125,7 @@
 				<property name="password" value="${canal.instance.dbPassword:retl}" />
 				<property name="pwdPublicKey" value="${canal.instance.pwdPublicKey:retl}" />
 				<property name="enableDruid" value="${canal.instance.enableDruid:false}" />
-				<property name="defaultDatabaseName" value="${canal.instance.defaultDatabaseName:test}" />
+				<property name="defaultDatabaseName" value="${canal.instance.defaultDatabaseName:}" />
 			</bean>
 		</property>
 		<property name="standbyInfo">
@@ -131,7 +135,7 @@
 				<property name="password" value="${canal.instance.dbPassword:retl}" />
 				<property name="pwdPublicKey" value="${canal.instance.pwdPublicKey:retl}" />
 				<property name="enableDruid" value="${canal.instance.enableDruid:false}" />
-				<property name="defaultDatabaseName" value="${canal.instance.defaultDatabaseName:test}" />
+				<property name="defaultDatabaseName" value="${canal.instance.defaultDatabaseName:}" />
 			</bean>
 		</property>
 
@@ -174,6 +178,8 @@
 		<property name="parallel" value="${canal.instance.parser.parallel:true}" />
 		<property name="parallelThreadSize" value="${canal.instance.parser.parallelThreadSize}" />
 		<property name="parallelBufferSize" value="${canal.instance.parser.parallelBufferSize:256}" />
+
+		<property name="autoResetLatestPosMode" value="${canal.auto.reset.latest.pos.mode:false}" />
 	</bean>
 
 	<bean id="mqConfig" class="com.alibaba.otter.canal.instance.core.CanalMQConfig">
@@ -182,5 +188,6 @@
         <property name="partition" value="${canal.mq.partition}" />
         <property name="partitionsNum" value="${canal.mq.partitionsNum}" />
         <property name="partitionHash" value="${canal.mq.partitionHash}" />
+		<property name="dynamicTopicPartitionNum" value="${canal.mq.dynamicTopicPartitionNum}" />
 	</bean>
 </beans>

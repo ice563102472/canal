@@ -26,31 +26,26 @@ import com.taobao.tddl.dbsync.binlog.event.TableMapLogEvent;
 import com.taobao.tddl.dbsync.binlog.event.TableMapLogEvent.ColumnInfo;
 import com.taobao.tddl.dbsync.binlog.event.UpdateRowsLogEvent;
 import com.taobao.tddl.dbsync.binlog.event.WriteRowsLogEvent;
+import org.junit.Ignore;
 
+@Ignore
 public class MysqlBinlogParsePerformanceTest {
 
     protected static Charset charset = Charset.forName("utf-8");
 
     public static void main(String args[]) {
-        DirectLogFetcher fetcher = new DirectLogFetcher();
-        try {
+        try (DirectLogFetcher fetcher = new DirectLogFetcher()) {
             MysqlConnector connector = new MysqlConnector(new InetSocketAddress("127.0.0.1", 3306), "root", "hello");
             connector.connect();
             updateSettings(connector);
             sendBinlogDump(connector, "mysql-bin.000006", 120L, 3);
             fetcher.start(connector.getChannel());
-            final BlockingQueue<LogBuffer> buffer = new ArrayBlockingQueue<LogBuffer>(1024);
-            Thread thread = new Thread(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        consumer(buffer);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+            final BlockingQueue<LogBuffer> buffer = new ArrayBlockingQueue<>(1024);
+            Thread thread = new Thread(() -> {
+                try {
+                    consumer(buffer);
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
                 }
             });
             thread.start();
@@ -61,11 +56,6 @@ public class MysqlBinlogParsePerformanceTest {
             }
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            try {
-                fetcher.close();
-            } catch (IOException e) {
-            }
         }
     }
 

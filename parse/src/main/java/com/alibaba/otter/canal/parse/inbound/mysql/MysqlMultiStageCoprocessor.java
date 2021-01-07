@@ -98,16 +98,16 @@ public class MysqlMultiStageCoprocessor extends AbstractCanalLifeCycle implement
         ExceptionHandler exceptionHandler = new SimpleFatalExceptionHandler();
         // stage 2
         this.logContext = new LogContext();
-        simpleParserStage = new BatchEventProcessor<MessageEvent>(disruptorMsgBuffer,
-            sequenceBarrier,
-            new SimpleParserStage(logContext));
+        simpleParserStage = new BatchEventProcessor<>(disruptorMsgBuffer,
+                sequenceBarrier,
+                new SimpleParserStage(logContext));
         simpleParserStage.setExceptionHandler(exceptionHandler);
         disruptorMsgBuffer.addGatingSequences(simpleParserStage.getSequence());
 
         // stage 3
         SequenceBarrier dmlParserSequenceBarrier = disruptorMsgBuffer.newBarrier(simpleParserStage.getSequence());
-        WorkHandler<MessageEvent>[] workHandlers = new DmlParserStage[parserThreadCount];
-        for (int i = 0; i < parserThreadCount; i++) {
+        WorkHandler<MessageEvent>[] workHandlers = new DmlParserStage[tc];
+        for (int i = 0; i < tc; i++) {
             workHandlers[i] = new DmlParserStage();
         }
         workerPool = new WorkerPool<MessageEvent>(disruptorMsgBuffer,
@@ -119,9 +119,9 @@ public class MysqlMultiStageCoprocessor extends AbstractCanalLifeCycle implement
 
         // stage 4
         SequenceBarrier sinkSequenceBarrier = disruptorMsgBuffer.newBarrier(sequence);
-        sinkStoreStage = new BatchEventProcessor<MessageEvent>(disruptorMsgBuffer,
-            sinkSequenceBarrier,
-            new SinkStoreStage());
+        sinkStoreStage = new BatchEventProcessor<>(disruptorMsgBuffer,
+                sinkSequenceBarrier,
+                new SinkStoreStage());
         sinkStoreStage.setExceptionHandler(exceptionHandler);
         disruptorMsgBuffer.addGatingSequences(sinkStoreStage.getSequence());
 
@@ -190,17 +190,17 @@ public class MysqlMultiStageCoprocessor extends AbstractCanalLifeCycle implement
             return false;
         }
 
-        /**
-         * 由于改为processor仅终止自身stage而不是stop，那么需要由incident标识coprocessor是否正常工作。
-         * 让dump线程能够及时感知
-         */
-        if (exception != null) {
-            throw exception;
-        }
         boolean interupted = false;
         long blockingStart = 0L;
         int fullTimes = 0;
         do {
+            /**
+             * 由于改为processor仅终止自身stage而不是stop，那么需要由incident标识coprocessor是否正常工作。
+             * 让dump线程能够及时感知
+             */
+            if (exception != null) {
+                throw exception;
+            }
             try {
                 long next = disruptorMsgBuffer.tryNext();
                 MessageEvent data = disruptorMsgBuffer.get(next);
@@ -387,7 +387,7 @@ public class MysqlMultiStageCoprocessor extends AbstractCanalLifeCycle implement
         }
     }
 
-    class MessageEvent {
+    static class MessageEvent {
 
         private LogBuffer        buffer;
         private CanalEntry.Entry entry;
@@ -437,10 +437,12 @@ public class MysqlMultiStageCoprocessor extends AbstractCanalLifeCycle implement
 
     }
 
-    class SimpleFatalExceptionHandler implements ExceptionHandler {
+    static class SimpleFatalExceptionHandler implements ExceptionHandler {
 
         @Override
         public void handleEventException(final Throwable ex, final long sequence, final Object event) {
+            //异常上抛，否则processEvents的逻辑会默认会mark为成功执行，有丢数据风险
+            throw new CanalParseException(ex);
         }
 
         @Override
@@ -452,7 +454,7 @@ public class MysqlMultiStageCoprocessor extends AbstractCanalLifeCycle implement
         }
     }
 
-    class MessageEventFactory implements EventFactory<MessageEvent> {
+    static class MessageEventFactory implements EventFactory<MessageEvent> {
 
         public MessageEvent newInstance() {
             return new MessageEvent();

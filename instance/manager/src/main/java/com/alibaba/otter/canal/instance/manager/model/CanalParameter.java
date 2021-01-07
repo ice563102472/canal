@@ -12,7 +12,7 @@ import com.alibaba.otter.canal.common.utils.CanalToStringStyle;
 
 /**
  * canal运行相关参数
- * 
+ *
  * @author jianghang 2012-7-4 下午02:52:52
  * @version 1.0.0
  */
@@ -118,6 +118,12 @@ public class CanalParameter implements Serializable {
     private String                   standbyLogfileName                 = null;                      // standby起始位置
     private Long                     standbyLogfileOffest               = null;
     private Long                     standbyTimestamp                   = null;
+    private Boolean                  parallel                           = Boolean.FALSE;
+
+    //自定义alarmHandler类全路径
+    private String                   alarmHandlerClass                  = null;
+    //自定义alarmHandler插件文件夹路径
+    private String                   alarmHandlerPluginDir              = null;
 
     public static enum RunMode {
 
@@ -328,7 +334,7 @@ public class CanalParameter implements Serializable {
 
     /**
      * 数据来源描述
-     * 
+     *
      * @author jianghang 2012-12-26 上午11:05:20
      * @version 4.1.5
      */
@@ -655,7 +661,7 @@ public class CanalParameter implements Serializable {
 
     public List<InetSocketAddress> getDbAddresses() {
         if (dbAddresses == null) {
-            dbAddresses = new ArrayList<InetSocketAddress>();
+            dbAddresses = new ArrayList<>();
             if (masterAddress != null) {
                 dbAddresses.add(masterAddress);
             }
@@ -669,22 +675,22 @@ public class CanalParameter implements Serializable {
 
     public List<List<DataSourcing>> getGroupDbAddresses() {
         if (groupDbAddresses == null) {
-            groupDbAddresses = new ArrayList<List<DataSourcing>>();
+            groupDbAddresses = new ArrayList<>();
             if (dbAddresses != null) {
                 for (InetSocketAddress address : dbAddresses) {
-                    List<DataSourcing> groupAddresses = new ArrayList<DataSourcing>();
+                    List<DataSourcing> groupAddresses = new ArrayList<>();
                     groupAddresses.add(new DataSourcing(sourcingType, address));
                     groupDbAddresses.add(groupAddresses);
                 }
             } else {
                 if (masterAddress != null) {
-                    List<DataSourcing> groupAddresses = new ArrayList<DataSourcing>();
+                    List<DataSourcing> groupAddresses = new ArrayList<>();
                     groupAddresses.add(new DataSourcing(sourcingType, masterAddress));
                     groupDbAddresses.add(groupAddresses);
                 }
 
                 if (standbyAddress != null) {
-                    List<DataSourcing> groupAddresses = new ArrayList<DataSourcing>();
+                    List<DataSourcing> groupAddresses = new ArrayList<>();
                     groupAddresses.add(new DataSourcing(sourcingType, standbyAddress));
                     groupDbAddresses.add(groupAddresses);
                 }
@@ -725,7 +731,7 @@ public class CanalParameter implements Serializable {
 
     public List<String> getPositions() {
         if (positions == null) {
-            positions = new ArrayList<String>();
+            positions = new ArrayList<>();
             String masterPosition = buildPosition(masterLogfileName, masterLogfileOffest, masterTimestamp);
             if (masterPosition != null) {
                 positions.add(masterPosition);
@@ -980,6 +986,30 @@ public class CanalParameter implements Serializable {
 
     public void setTsdbSnapshotExpire(Integer tsdbSnapshotExpire) {
         this.tsdbSnapshotExpire = tsdbSnapshotExpire;
+    }
+
+    public Boolean getParallel() {
+        return parallel;
+    }
+
+    public void setParallel(Boolean parallel) {
+        this.parallel = parallel;
+    }
+
+    public String getAlarmHandlerClass() {
+        return alarmHandlerClass;
+    }
+
+    public void setAlarmHandlerClass(String alarmHandlerClass) {
+        this.alarmHandlerClass = alarmHandlerClass;
+    }
+
+    public String getAlarmHandlerPluginDir() {
+        return alarmHandlerPluginDir;
+    }
+
+    public void setAlarmHandlerPluginDir(String alarmHandlerPluginDir) {
+        this.alarmHandlerPluginDir = alarmHandlerPluginDir;
     }
 
     public String toString() {
